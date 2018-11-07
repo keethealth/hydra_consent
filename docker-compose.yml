@@ -10,15 +10,13 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - db
       - identity_provider
     environment:
       - HYDRA_AUTH_URL=http://localhost:4444/oauth2/auth?client_id=app&response_type=code&state=72582c142d403a972b579f05140bf93f&nonce=gyukgyglgghjjkk&redirect_uri=http://localhost:3000/sessions/callback&scope=openid+offline
       - CLIENT_ID=app
       - CLIENT_SECRET=secret
       - AUTH_STATE=72582c142d403a972b579f05140bf93f
-      - DB_PASSWORD=secret
-      - DB_HOST=db
+      - DATABASE_URL=postgres://brendonharris:@host.docker.internal:5432/frontend_development
 
   identity_provider:
     build:
@@ -27,21 +25,12 @@ services:
     volumes:
       - ./identity_provider:/home/app
     depends_on:
-      - db
       - hydra
     ports:
       - "4000:3000"
     environment:
       - HYDRA_URL=http://hydra:4444
-      - DB_PASSWORD=secret
-      - DB_HOST=db
-
-  db:
-    image: mysql:5.7
-    volumes:
-      - db_data:/var/lib/mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: secret
+      - DATABASE_URL=postgres://brendonharris:@host.docker.internal:5432/frontend_development
 
   hydra_db:
     image: postgres:9.6
@@ -68,10 +57,11 @@ services:
     image: oryd/hydra:v1.0.0-beta.9-alpine
     ports:
       - "4444:4444"
+      - "4445:4445"
     links:
       - hydra_db:hydra_db
     command:
-      serve --dangerous-force-http --disable-telemetry
+      serve all --dangerous-force-http
     depends_on:
       - hydra-migrate
     environment:
